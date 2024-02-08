@@ -7,7 +7,7 @@ use bevy_rapier3d::{
     rapier::prelude::{RoundShape, Shape as RapierShape, SharedShape},
     rapier::{
         parry::shape,
-        prelude::{Isometry, TypedShape},
+        prelude::{TypedShape},
     },
 };
 
@@ -21,47 +21,49 @@ impl Default for ShapeHolder {
     }
 }
 
-#[derive(Clone, Reflect, Default, Component)]
-#[reflect(Default)]
-pub(super) struct CompoundShapeElement {
-    offset: Vec3,
-    rotation: Quat,
-    shape: ColliderMirror,
-}
+// #[derive(Clone, Reflect, Default, Component)]
+// #[reflect(Default)]
+// pub(super) struct CompoundShapeElement {
+//     offset: Vec3,
+//     rotation: Quat,
+//     shape: ColliderMirror,
+// }
 
-#[derive(Clone, Reflect, Component)]
-#[reflect(Default)]
-pub struct Compound(Vec<CompoundShapeElement>);
-impl Default for Compound {
-    fn default() -> Self {
-        Self(vec![Default::default()])
-    }
-}
-impl Compound {
-    fn into_rapier(&self) -> Vec<(Isometry<f32>, SharedShape)> {
-        self.0
-            .iter()
-            .map(|mirror| {
-                (
-                    Isometry::from_parts(mirror.offset.into(), mirror.rotation.into()),
-                    (&mirror.shape).into(),
-                )
-            })
-            .collect()
-    }
-    fn from_rapier(elems: &[(Isometry<f32>, SharedShape)]) -> Self {
-        Self(
-            elems
-                .iter()
-                .map(|rapier| CompoundShapeElement {
-                    offset: rapier.0.translation.into(),
-                    rotation: rapier.0.rotation.into(),
-                    shape: (&rapier.1).into(),
-                })
-                .collect(),
-        )
-    }
-}
+// #[derive(Clone, Reflect, Component)]
+// #[reflect(Default)]
+// pub struct Compound(Vec<CompoundShapeElement>);
+// impl Default for Compound {
+//     fn default() -> Self {
+//         Self(vec![Default::default()])
+//     }
+// }
+
+
+// impl Compound {
+//     fn into_rapier(&self) -> Vec<(Isometry<f32>, SharedShape)> {
+//         self.0
+//             .iter()
+//             .map(|mirror| {
+//                 (
+//                     Isometry::from_parts(mirror.offset.into(), mirror.rotation.into()),
+//                     (&mirror.shape).into(),
+//                 )
+//             })
+//             .collect()
+//     }
+//     fn from_rapier(elems: &[(Isometry<f32>, SharedShape)]) -> Self {
+//         Self(
+//             elems
+//                 .iter()
+//                 .map(|rapier| CompoundShapeElement {
+//                     offset: rapier.0.translation.into(),
+//                     rotation: rapier.0.rotation.into(),
+//                     shape: (&rapier.1).into(),
+//                 })
+//                 .collect(),
+//         )
+//     }
+// }
 
 #[derive(Clone, Reflect)]
 #[reflect(Default)]
@@ -92,7 +94,7 @@ pub enum Shape {
     // Polyline {},
     // HalfSpace { normal: Vec3 },
     // HeightField {},
-    Compound(Compound),
+    // Compound(Compound),
     // ConvexPolyhedron {},
     Cylinder {
         half_height: f32,
@@ -178,9 +180,9 @@ impl<'a> From<&'a SharedShape> for Shape {
                 b: v.b.into(),
                 c: v.c.into(),
             },
-            R::Compound(v) => Self::Compound(Compound::from_rapier(v.shapes())),
             R::TriMesh(_)
             | R::Polyline(_)
+            | R::Compound(_) 
             | R::HalfSpace(_)
             | R::HeightField(_)
             | R::ConvexPolyhedron(_)
@@ -257,7 +259,6 @@ impl<'a> From<&'a ColliderMirror> for SharedShape {
                 half_height,
                 radius,
             } => set_shape!(round Cone(half_height, radius)),
-            S::Compound(ref elems) => set_shape!(Compound(elems.into_rapier())),
             S::UnimplementedYet(ref shape) => shape.0.clone(),
         }
     }
